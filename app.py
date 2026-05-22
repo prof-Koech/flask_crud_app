@@ -16,6 +16,7 @@ from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from datetime import datetime
+from flasgger import Swagger
 # from dotenv import load_dotenv
 # import os
 
@@ -53,6 +54,31 @@ login_manager = LoginManager(app)
 login_manager.login_view             = 'login'
 login_manager.login_message          = 'Please login to access this page.'
 login_manager.login_message_category = 'error'
+
+swagger_template = {
+    'swagger': '2.0',
+    'info': {
+        'title': 'Flask CRUD API',
+        'description': 'API documentation for user management endpoints.',
+        'version': '1.0.0',
+    },
+    'basePath': '/',
+    'schemes': ['http', 'https'],
+    'definitions': {
+        'User': {
+            'type': 'object',
+            'properties': {
+                'id': {'type': 'integer', 'example': 1},
+                'name': {'type': 'string', 'example': 'Alice'},
+                'email': {'type': 'string', 'example': 'alice@example.com'},
+                'role': {'type': 'string', 'example': 'user'},
+                'created_at': {'type': 'string', 'format': 'date-time', 'example': '2026-05-22T12:34:56Z'},
+            },
+        },
+    },
+}
+
+Swagger(app, template=swagger_template)
 
 
 # ── Models ──────────────────────────────────────────────────────
@@ -423,6 +449,46 @@ def delete(user_id):
 
 @app.route('/api/users', methods=['GET'])
 def api_get_users():
+    """
+    Get list of users
+    ---
+    tags:
+      - Users
+    parameters:
+      - name: search
+        in: query
+        type: string
+        required: false
+        description: Filter users by name or email.
+      - name: page
+        in: query
+        type: integer
+        required: false
+        default: 1
+      - name: per_page
+        in: query
+        type: integer
+        required: false
+        default: 10
+    responses:
+      200:
+        description: Paginated list of users.
+        schema:
+          type: object
+          properties:
+            users:
+              type: array
+              items:
+                $ref: '#/definitions/User'
+            total:
+              type: integer
+            pages:
+              type: integer
+            current_page:
+              type: integer
+            per_page:
+              type: integer
+    """
     search   = request.args.get('search',   '').strip()
     page     = request.args.get('page',     1,  type=int)
     per_page = request.args.get('per_page', 10, type=int)
@@ -449,11 +515,63 @@ def api_get_users():
 
 @app.route('/api/users/<int:user_id>', methods=['GET'])
 def api_get_user(user_id):
+    """
+    Get a single user
+    ---
+    tags:
+      - Users
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the user.
+    responses:
+      200:
+        description: User details.
+        schema:
+          $ref: '#/definitions/User'
+      404:
+        description: User not found.
+    """
     return jsonify(User.query.get_or_404(user_id).to_dict())
 
 
 @app.route('/api/users', methods=['POST'])
 def api_create_user():
+    """
+    Create a new user
+    ---
+    tags:
+      - Users
+    consumes:
+      - application/json
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+          required:
+            - name
+            - email
+    responses:
+      201:
+        description: User created.
+        schema:
+          $ref: '#/definitions/User'
+      400:
+        description: Invalid input.
+      409:
+        description: Email already exists.
+    """
     data = request.get_json(silent=True)
 
     if not data:
@@ -477,6 +595,43 @@ def api_create_user():
 
 @app.route('/api/users/<int:user_id>', methods=['PUT'])
 def api_update_user(user_id):
+    """
+    Update an existing user
+    ---
+    tags:
+      - Users
+    consumes:
+      - application/json
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the user to update.
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+    responses:
+      200:
+        description: Updated user details.
+        schema:
+          $ref: '#/definitions/User'
+      400:
+        description: Invalid input.
+      404:
+        description: User not found.
+      409:
+        description: Email already in use.
+    """
     user = User.query.get_or_404(user_id)
     data = request.get_json(silent=True)
 
@@ -504,6 +659,28 @@ def api_update_user(user_id):
 
 @app.route('/api/users/<int:user_id>', methods=['DELETE'])
 def api_delete_user(user_id):
+    """
+    Delete an existing user
+    ---
+    tags:
+      - Users
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+        description: ID of the user to delete.
+    responses:
+      200:
+        description: Success message.
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+      404:
+        description: User not found.
+    """
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
