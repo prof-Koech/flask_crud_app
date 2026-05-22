@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="min-h-screen flex items-center justify-center -mt-10">
+  <div class="bg-white shadow-md rounded-xl p-8 w-full max-w-sm">
+    <h2 class="text-2xl font-bold text-indigo-700 mb-6 text-center">🔐 Login</h2>
+    <form method="POST" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+        <input name="username" type="text" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input name="password" type="password" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      </div>
+      <button type="submit"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-semibold text-sm">
+        Login
+      </button>
+    </form>
+    <div class="mt-4 text-center space-y-2 text-sm text-gray-500">
+      <p><a href="/forgot-password" class="text-indigo-600 hover:underline">Forgot password?</a></p>
+      <p><a href="/resend-confirmation" class="text-indigo-600 hover:underline">Resend confirmation email</a></p>
+      <p>No account? <a href="/register" class="text-indigo-600 hover:underline">Register</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
